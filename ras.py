@@ -6,20 +6,21 @@ import numpy as np
 import time
 import io
 
-# Địa chỉ IP của máy chủ Flask (đổi '192.168.x.x' thành IP thật của server)
-FLASK_SERVER = 'http://192.168.1.100:5000'  # <-- Sửa IP theo server thật
+# Thay đổi địa chỉ IP sau thành địa chỉ của máy chạy Flask server
+FLASK_SERVER = 'http://localhost:5000'
 
-# Cấu hình âm thanh
+
+# Cấu hình audio
 AUDIO_RATE = 16000
 AUDIO_DURATION = 3  # giây
 
-# Mở camera (nếu dùng camera Pi, thay bằng 0 hoặc /dev/video0)
+# Mở camera
 cap = cv2.VideoCapture(0)
 if not cap.isOpened():
     print("Không thể mở camera.")
     exit()
 
-# Thông tin khách hàng (sẽ nhận từ server)
+# Global variables for customer details
 customer_id = None
 trip_id = None
 trip_duration = None
@@ -52,6 +53,7 @@ def send_audio():
     audio = sd.rec(int(AUDIO_DURATION * AUDIO_RATE), samplerate=AUDIO_RATE, channels=1, dtype='int16')
     sd.wait()
 
+    # Ghi vào buffer thay vì file tạm
     wav_buffer = io.BytesIO()
     wav.write(wav_buffer, AUDIO_RATE, audio)
     wav_buffer.seek(0)
@@ -66,7 +68,7 @@ def send_audio():
     except Exception as e:
         print("[Âm thanh] Lỗi khi gửi:", e)
 
-# Chờ tín hiệu bắt đầu từ server
+# Wait for server signal to start
 try:
     print("⏳ Đang chờ tín hiệu từ server để bắt đầu...")
     while True:
@@ -79,13 +81,11 @@ try:
             break
         time.sleep(2)
 
-    # Bắt đầu gửi dữ liệu
+    # Start sending data
     start_time = time.time()
     while time.time() - start_time < trip_duration * 60:
         send_image()
-        send_audio()
         time.sleep(2)  # Gửi mỗi 2 giây
-
 except KeyboardInterrupt:
     print("🛑 Dừng chương trình.")
 finally:
